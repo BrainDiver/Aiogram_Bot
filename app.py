@@ -1,0 +1,33 @@
+async def on_startup(dp):
+    import filters
+    filters.setup(dp)
+
+    import middlewares
+    middlewares.setup(dp)
+   
+    from loader import db
+    from utils.db_api.db_gino import on_startup
+    print ("Подключение к postgresql")
+    await on_startup(dp)
+    
+    await db.gino.drop_all()
+
+    print ("Создание таблиц")
+    await db.gino.create_all()
+
+    from utils.notify_admins import on_startup_notify
+    await on_startup_notify(dp)
+
+    from utils.set_bot_commands import set_default_commands
+    await set_default_commands(dp)
+    print("Бот запущен")
+
+async def on_shutdown(dp):
+    from utils.notify_admins import on_shutdown_notify
+    await on_shutdown_notify(dp)
+    print("Бот отключен")
+
+if __name__=="__main__":
+    from aiogram import executor
+    from handlers import dp
+    executor.start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown)
